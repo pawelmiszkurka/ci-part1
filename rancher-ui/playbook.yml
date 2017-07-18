@@ -1,0 +1,49 @@
+---
+hosts: all
+remote_user: root
+tasks:
+  - name: Update all packages to the latest version
+    apt: upgrade: dist
+
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt: update_cache: yes
+
+  - name: Install list of packages
+    apt: name={{ item} } state=installed
+    with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python-software-properties
+
+  - name: Add Docker apt key
+    apt_key: 
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  
+  - name: Add Docker Repository
+    apt_repository:
+      repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable'
+
+
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt: 
+    update_cache: yes
+  
+  - name: Install Docker
+    apt:
+    name: docker-ce state=installed
+
+  - name: Create a container containing the rancher ui
+    docker_container: 
+      image: rancher/server
+      restart_policy:
+        - "unless-stopped"
+      ports:
+        - "8080:8080"
+
+  - name: Disable Firewall 
+    ufw:
+      state: disabled
+
